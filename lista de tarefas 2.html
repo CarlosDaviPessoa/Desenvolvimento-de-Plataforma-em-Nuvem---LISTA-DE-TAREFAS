@@ -96,39 +96,82 @@
         const form = document.getElementById('form-tarefa');
         const listaTarefas = document.getElementById('lista-tarefas');
 
+        const APPLICATION_ID = '9eaSZLeDnDJTQn8pu0PexZme0gu6i36pvXqUfz1n';  // Substitua pelo seu Application ID do Back4App
+        const REST_API_KEY = 'q1fdKnMou4CbeF3QriqqbaKohOo4AzEV4gUw1P54';  // Substitua pela sua REST API Key do Back4App
+        const URL = 'https://parseapi.back4app.com/classes/Tarefas';
+
+        // Função para adicionar tarefa ao Back4App
+        async function adicionarTarefaBackEnd(texto) {
+            const response = await fetch(URL, {
+                method: 'POST',
+                headers: {
+                    'X-Parse-Application-Id': APPLICATION_ID,
+                    'X-Parse-REST-API-Key': REST_API_KEY,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ tarefa: texto })
+            });
+            const data = await response.json();
+            console.log('Tarefa adicionada:', data);
+            exibirTarefas(); // Atualiza a lista após adicionar
+        }
+
+        // Função para listar tarefas do Back4App
+        async function listarTarefasBackEnd() {
+            const response = await fetch(URL, {
+                method: 'GET',
+                headers: {
+                    'X-Parse-Application-Id': APPLICATION_ID,
+                    'X-Parse-REST-API-Key': REST_API_KEY
+                }
+            });
+            const data = await response.json();
+            return data.results;
+        }
+
+        // Função para excluir tarefa no Back4App
+        async function excluirTarefaBackEnd(objectId) {
+            const response = await fetch(`${URL}/${objectId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-Parse-Application-Id': APPLICATION_ID,
+                    'X-Parse-REST-API-Key': REST_API_KEY
+                }
+            });
+            console.log('Tarefa excluída:', objectId);
+            exibirTarefas(); // Atualiza a lista após excluir
+        }
+
+        // Exibe as tarefas do Back4App na interface
+        async function exibirTarefas() {
+            const tarefas = await listarTarefasBackEnd();
+            listaTarefas.innerHTML = ''; // Limpa a lista antes de exibir
+            tarefas.forEach(tarefa => {
+                const li = document.createElement('li');
+                li.textContent = tarefa.tarefa;
+
+                const btnExcluir = document.createElement('button');
+                btnExcluir.textContent = 'Excluir';
+                btnExcluir.classList.add('btn-delete');
+                btnExcluir.onclick = function() {
+                    excluirTarefaBackEnd(tarefa.objectId);
+                };
+
+                li.appendChild(btnExcluir);
+                listaTarefas.appendChild(li);
+            });
+        }
+
+        // Função que será chamada ao submeter o formulário
         form.onsubmit = function(e) {
             e.preventDefault();
             const tarefaTexto = document.getElementById('nova-tarefa').value;
-            adicionarTarefa(tarefaTexto);
+            adicionarTarefaBackEnd(tarefaTexto);  // Chama a função para adicionar a tarefa no Back4App
             form.reset();
         };
 
-        function adicionarTarefa(texto) {
-            const li = document.createElement('li');
-            li.textContent = texto;
-
-            const btnEditar = document.createElement('button');
-            btnEditar.textContent = 'Editar';
-            btnEditar.onclick = function() {
-                const novoTexto = prompt('Edite a tarefa:', texto);
-                if (novoTexto) {
-                    li.textContent = novoTexto;
-                    li.appendChild(btnEditar);
-                    li.appendChild(btnExcluir);
-                }
-            };
-
-            const btnExcluir = document.createElement('button');
-            btnExcluir.textContent = 'Excluir';
-            btnExcluir.classList.add('btn-delete');
-            btnExcluir.onclick = function() {
-                listaTarefas.removeChild(li);
-            };
-
-            li.appendChild(btnEditar);
-            li.appendChild(btnExcluir);
-            listaTarefas.appendChild(li);
-        }
+        // Exibe as tarefas ao carregar a página
+        window.onload = exibirTarefas;
     </script>
 </body>
 </html>
